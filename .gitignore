@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+*.egg-info
+dist
+MUJOCO_LOG.TXT
+*.un~
+exp
+.DS_Store
+SimulationEnv/controllers/spotcontroller/.idea/*
+spotcontroller/.idea/*
+.idea/*
+.pytest_cache/
+data/*
