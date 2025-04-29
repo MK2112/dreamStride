@@ -88,6 +88,5 @@ An example WeBots world for the Spot robot is located at `./SimulationEnv/worlds
 ## Folder Overview
 
 - `./data` will contain training logs and model checkpoints.
-- `./presentation` contains both midterm and final presentations.
 - `./SimulationEnv` contains WeBots world files and other directly WeBots-related files.
 - `./spotcontroller` contains the WeBots Spot robot controller and a tester file `dummy_backend.py`
