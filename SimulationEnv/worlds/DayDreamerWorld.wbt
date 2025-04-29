@@ -1,0 +1,106 @@
+#VRML_SIM R2023b utf8
+
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/floors/protos/Floor.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/robots/boston_dynamics/spot/protos/Spot.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/backgrounds/protos/TexturedBackgroundLight.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/appearances/protos/Parquetry.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/apartment_structure/protos/Wall.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/advertising_board/protos/AdvertisingBoard.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/appearances/protos/Roughcast.proto"
+
+WorldInfo {
+}
+Viewpoint {
+  orientation -0.0017594694487898907 -0.9999962081022926 0.0021185014267233815 4.898632431395081
+  position -5.354835136283615 0.6779945275648833 27.248123382155345
+}
+Floor {
+  appearance Parquetry {
+    type "light strip"
+  }
+}
+TexturedBackgroundLight {
+  castShadows FALSE
+}
+Wall {
+  translation 1.43 1.96 0
+  rotation 0 0 1 -1.5707953071795862
+  size 0.1 7 2.4
+}
+Wall {
+  translation -1.92 -0.6 0
+  rotation 0 0 1 -1.5707953071795862
+  name "wall(5)"
+  size 0.1 6 2.4
+}
+Wall {
+  translation -4.42 1.97 0
+  rotation 0 0 1 -1.5707953071795862
+  name "wall(4)"
+  size 0.1 1 2.4
+}
+Wall {
+  translation 3.89 -0.63 0
+  rotation 0 0 1 -1.5707953071795862
+  name "wall(1)"
+  size 0.1 2 2.4
+}
+Wall {
+  translation 4.93 1.05624e-13 0
+  rotation 0 0 1 3.14159
+  name "wall(6)"
+  size 0.1 10 2.4
+  appearance Roughcast {
+    colorOverride 0 1 0
+    textureTransform TextureTransform {
+      scale 2.4 1
+    }
+  }
+}
+Wall {
+  translation -4.98 2.62978e-05 0
+  rotation 0 0 1 3.14159
+  name "wall(7)"
+  size 0.1 10 2.4
+  appearance Roughcast {
+    colorOverride 0 0 1
+    textureTransform TextureTransform {
+      scale 2.4 1
+    }
+  }
+}
+Wall {
+  translation -0.01 4.98002 0
+  rotation 0 0 -1 -1.5707953071795862
+  name "wall(8)"
+  size 0.1 10 2.4
+  appearance Roughcast {
+    colorOverride 1 1 0
+    textureTransform TextureTransform {
+      scale 2.4 1
+    }
+  }
+}
+Wall {
+  translation -0.01001 -5.01998 0
+  rotation 0 0 -1 -1.5707953071795862
+  name "wall(9)"
+  size 0.1 10 2.4
+  appearance Roughcast {
+    colorOverride 1 0 0
+    textureTransform TextureTransform {
+      scale 2.4 1
+    }
+  }
+}
+AdvertisingBoard {
+  translation 3.43436 -3.5 0
+  rotation 0 0 1 -0.523595307179586
+  displayWidth 0.5
+  displayHeight 0.5
+}
+Spot {
+  translation -3.9 3.55 0.624
+  controller "<extern>"
+  supervisor TRUE
+}
