@@ -90,3 +90,21 @@ An example WeBots world for the Spot robot is located at `./SimulationEnv/worlds
 - `./data` will contain training logs and model checkpoints.
 - `./SimulationEnv` contains WeBots world files and other directly WeBots-related files.
 - `./spotcontroller` contains the WeBots Spot robot controller and a tester file `dummy_backend.py`
+
+## Roadmap
+
+- [x] Project structure and repository initialization
+- [x] Integration and adaptation of the DayDreamer implementation for Webots
+- [x] Creation and configuration of the Webots simulation environment with the Spot robot ([SimulationEnv/worlds/DayDreamerWorld.wbt](SimulationEnv/worlds/DayDreamerWorld.wbt))
+- [x] Development of the Spot controller for robot control and observation in Webots ([spotcontroller/spot\_controller.py](spotcontroller/spot_controller.py))
+- [x] Establishment of bidirectional socket communication between the DayDreamer algorithm and the Webots controller
+- [x] Implementation of the wrapper to translate between algorithm and controller ([spot\_wrapper.py](spot_wrapper.py))
+- [x] Adjustment and integration of the training process for the Webots environment ([dreamer.py](dreamer.py))
+- [x] Implementation and testing of the replay buffer, logger, and utilities
+- [x] Documentation of setup and training steps in the README
+- [x] Provision of example images and architecture overview
+- [ ] Extension and optimization of the training and evaluation scripts for more/different simulated environments
+- [ ] Development and integration of logging and visualization tools for training progress and model performance
+- [ ] Improvement of codebase modularity and extensibility for additional robot types and tasks
+- [ ] Testing out new and more interpretable reward functions that effectively guide smaller RL agents to achieve complex goals while balancing multiple, potentially conflicting objectives
+- [ ] Preparation and release of tutorials, examples, and further documentation
