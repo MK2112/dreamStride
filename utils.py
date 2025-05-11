@@ -4,7 +4,6 @@ import torch
 import numpy as np
 from moviepy.video.io.ImageSequenceClip import ImageSequenceClip
 from summary_writer import SummaryWriter # replaces from tensorboardX import SummaryWriter
-import matplotlib.pyplot as plt
 from typing import Iterable
 from torch.nn import Module
 

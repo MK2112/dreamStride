@@ -1,10 +1,7 @@
 import gym
-import sys
 import socket
 import json
-import torch
 import numpy as np
-from PIL import Image
 
 
 class SpotControl:

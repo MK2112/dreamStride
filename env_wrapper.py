@@ -1,8 +1,5 @@
 import gym
-import sys
-import torch
 import numpy as np
-from PIL import Image
 
 class DeepMindControl:
 

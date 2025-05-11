@@ -1,4 +1,3 @@
-import torch
 import numpy as np
 
 
@@ -20,6 +19,15 @@ class ReplayBuffer:
         self.steps, self.episodes = 0, 0
     
     def add(self, obs, ac, rew, done):
+        # Input validation
+        if obs is None or not isinstance(obs, dict) or 'image' not in obs:
+            raise ValueError('obs must be a dict with an "image" key')
+        if not isinstance(ac, np.ndarray) or ac.shape != (self.action_size,):
+            raise ValueError(f'ac must be a numpy array of shape ({self.action_size},)')
+        if not (isinstance(rew, float) or isinstance(rew, np.floating) or isinstance(rew, np.float32) or isinstance(rew, np.float64)):
+            raise ValueError('rew must be a float')
+        if not (isinstance(done, (int, float, np.integer, np.floating))):
+            raise ValueError('done must be a number')
 
         self.observations[self.idx] = obs['image']
         self.actions[self.idx] = ac
