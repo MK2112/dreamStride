@@ -5,7 +5,6 @@ import tempfile
 from summary_writer import SummaryWriter
 
 def test_summary_writer_add_scalar_and_flush():
-    import threading
     with tempfile.TemporaryDirectory() as tmpdir:
         writer = SummaryWriter(tmpdir, flush_secs=1, max_queue=1)
         writer.add_scalar('test_var', 123, 1)

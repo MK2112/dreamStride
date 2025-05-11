@@ -1,7 +1,6 @@
 import sys, os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import numpy as np
-import pytest
 from replay_buffer import ReplayBuffer
 
 def make_fake_obs(shape):

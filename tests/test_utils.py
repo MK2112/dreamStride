@@ -1,9 +1,7 @@
 import sys, os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import torch
-import numpy as np
 from utils import get_parameters, FreezeParameters, Logger, compute_return
-import types
 import tempfile
 import os
 from torch.nn import Linear
