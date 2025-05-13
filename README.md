@@ -108,3 +108,10 @@ An example WeBots world for the Spot robot is located at `./SimulationEnv/worlds
 - [ ] Improvement of codebase modularity and extensibility for additional robot types and tasks
 - [ ] Testing out new and more interpretable reward functions that effectively guide smaller RL agents to achieve complex goals while balancing multiple, potentially conflicting objectives
 - [ ] Preparation and release of tutorials, examples, and further documentation
+
+## Short-Term TODO
+
+- [ ] Enforce naming conventions, linting
+- [ ] Distinguish and fix MUJOCO implementation from WeBots implementation
+- [ ] Add more comments and docstrings, specifically to the dreamer implementation
+- [ ] Go over distributed training elements
