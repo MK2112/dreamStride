@@ -8,6 +8,7 @@ PORT_DAYDREAMER = 9999  # Port to listen on (observ emitted from here)
 RECV_SIZE = 8
 BUFFER_SIZE = 1024
 
+
 def receive_all(conn: socket.socket, length: int) -> bytes:
     """
     As it turns out socket.send_all() is a thing, but doesn't in fact send all with really sizeable data.
@@ -16,7 +17,7 @@ def receive_all(conn: socket.socket, length: int) -> bytes:
     :param length: The length of the data we want to receive (this was announced before)
     :return: Concatenated, received data
     """
-    received_data = b''
+    received_data = b""
     while len(received_data) < length:
         remaining_length = length - len(received_data)
         chunk = conn.recv(min(BUFFER_SIZE, remaining_length))
@@ -24,6 +25,7 @@ def receive_all(conn: socket.socket, length: int) -> bytes:
             raise RuntimeError("Received data incomplete. Socket connection broken.")
         received_data += chunk
     return received_data
+
 
 def dummy_server():
     print("[+] Dummy server started.")
@@ -44,7 +46,7 @@ def dummy_server():
     print(f"[+] Connected to controller at {addr}")
 
     # This is just an endurance test loop counter
-    counter = 600 # approx. 20 minutes, i.e. 2 seconds per loop
+    counter = 600  # approx. 20 minutes, i.e. 2 seconds per loop
 
     while True and counter > 0:
         ## Actio: Send mocked action to controller
@@ -73,7 +75,7 @@ def dummy_server():
         print(f"Observation: {obs}")
 
         print(type(obs))
-        print('Counter:', counter)
+        print("Counter:", counter)
         counter -= 1
 
 

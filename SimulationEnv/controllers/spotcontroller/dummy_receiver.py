@@ -4,6 +4,7 @@ import json
 HOST = "localhost"  # Standard loopback interface address (localhost)
 PORT = 9999  # Port to listen on (non-privileged ports are > 1023)
 
+
 def dummy_server():
     print("ALIVE")
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:

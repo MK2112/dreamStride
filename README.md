@@ -112,6 +112,7 @@ An example WeBots world for the Spot robot is located at `./SimulationEnv/worlds
 ## Short-Term TODO
 
 - [ ] Enforce naming conventions, linting
+- [ ] Outsource common parameters to a config json
 - [ ] Distinguish and fix MUJOCO implementation from WeBots implementation
 - [ ] Add more comments and docstrings, specifically to the dreamer implementation
 - [ ] Go over distributed training elements

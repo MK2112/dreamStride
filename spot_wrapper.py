@@ -5,19 +5,18 @@ import numpy as np
 
 
 class SpotControl:
-
     def __init__(self, size=(64, 256)):
         self.size = size
 
-        self.HOST = 'localhost'
+        self.HOST = "localhost"
         self.PORT_OUT = 9998
         self.PORT_IN = 9999
         self.RECV_SIZE = 8
         self.BUFFER_SIZE = 1024
-        self.world_iters = 256      # Training event limit
-        self.iters_counter = 0      # Training event counter
+        self.world_iters = 256  # Training event limit
+        self.iters_counter = 0  # Training event counter
         print("[+] Integrator started.")
-        print(f'[!] One episode is set to {self.world_iters} iterations.')
+        print(f"[!] One episode is set to {self.world_iters} iterations.")
 
         # Connect Socket to (HOST, PORT_DAYDREAMER) to listen to receiving data -> socket_in
         self._socket_in = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -38,22 +37,26 @@ class SpotControl:
         :param length: The length of the data we want to receive (this was announced before)
         :return: Concatenated, received data
         """
-        received_data = b''
+        received_data = b""
         while len(received_data) < length:
             remaining_length = length - len(received_data)
             chunk = conn.recv(min(self.BUFFER_SIZE, remaining_length))
             if not chunk:
-                raise RuntimeError("Received data incomplete. Socket connection broken.")
+                raise RuntimeError(
+                    "Received data incomplete. Socket connection broken."
+                )
             received_data += chunk
         return received_data
 
     @property
     def observation_space(self):
-        return gym.spaces.Dict({
-            'image': gym.spaces.Box(0, 255, self.size + (3,), dtype=np.uint8),
-            'reset': gym.spaces.Box(0, 1, (1,), dtype=np.uint8),
-            'reward': gym.spaces.Box(-np.inf, np.inf, (1,), dtype=np.float32)
-        })
+        return gym.spaces.Dict(
+            {
+                "image": gym.spaces.Box(0, 255, self.size + (3,), dtype=np.uint8),
+                "reset": gym.spaces.Box(0, 1, (1,), dtype=np.uint8),
+                "reward": gym.spaces.Box(-np.inf, np.inf, (1,), dtype=np.float32),
+            }
+        )
 
     @property
     def action_space(self):
@@ -69,7 +72,9 @@ class SpotControl:
         action = {str(i): action[i] for i in range(len(action))}
 
         action_data = json.dumps(action).encode()
-        self._socket_out.sendall(len(action_data).to_bytes(self.RECV_SIZE, byteorder="big"))
+        self._socket_out.sendall(
+            len(action_data).to_bytes(self.RECV_SIZE, byteorder="big")
+        )
         self._socket_out.sendall(action_data)
 
         ## Reactio: Receive observation from WeBots
@@ -81,9 +86,20 @@ class SpotControl:
         # image: (3, 64, 64) [0, 255]
 
         done = False if self.iters_counter < self.world_iters else True
-        self.iters_counter = self.iters_counter + 1 if self.iters_counter < self.world_iters else 0
+        self.iters_counter = (
+            self.iters_counter + 1 if self.iters_counter < self.world_iters else 0
+        )
 
-        return {'position': [0, 0, 0], 'velocity': [0, 0], 'image': np.array(obs['image'], dtype=np.uint8)}, obs['reward'], done, {'discount': np.array(1.0, np.float32)}
+        return (
+            {
+                "position": [0, 0, 0],
+                "velocity": [0, 0],
+                "image": np.array(obs["image"], dtype=np.uint8),
+            },
+            obs["reward"],
+            done,
+            {"discount": np.array(1.0, np.float32)},
+        )
 
     def reset(self):
         ## Actio: Send network output to WeBots
@@ -91,10 +107,12 @@ class SpotControl:
 
         np_actions = np.random.uniform(-1, 1, 12)
         action = {str(i): np_actions[i] for i in range(12)}
-        action['reset'] = 1
+        action["reset"] = 1
 
         action_data = json.dumps(action).encode()
-        self._socket_out.sendall(len(action_data).to_bytes(self.RECV_SIZE, byteorder="big"))
+        self._socket_out.sendall(
+            len(action_data).to_bytes(self.RECV_SIZE, byteorder="big")
+        )
         self._socket_out.sendall(action_data)
 
         ## Reactio: Receive observation from WeBots
@@ -103,7 +121,11 @@ class SpotControl:
         obs = json.loads(obs_data.decode())
 
         # obs: Dict ['position': (3,), 'velocity': (2,), 'image': (3, 64, 64)]
-        return {'position': [0, 0, 0], 'velocity': [0, 0], 'image': np.array(obs['image'], dtype=np.uint8)}
+        return {
+            "position": [0, 0, 0],
+            "velocity": [0, 0],
+            "image": np.array(obs["image"], dtype=np.uint8),
+        }
 
     def render(self, *args, **kwargs):
         raise NotImplementedError

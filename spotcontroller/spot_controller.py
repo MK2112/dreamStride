@@ -15,46 +15,58 @@ if __name__ == "__main__":
     """
 
     HOST = "localhost"
-    PORT_CONTROLLER = 9998            # Port to listen on (action data sent to here)
-    PORT_DAYDREAMER = 9999            # Port to connect to (observ data emitted from here)
-    GPS_BEACON = [2.59, -3.01, 0.624] # [x,y,z] of goal position
-    D_THRESHOLD = 0.5                 # Distance threshold for goal position
-    RECV_SIZE = 8                     # Size of the received data
-    BUFFER_SIZE = 1024                # Size of the buffer for sending data
+    PORT_CONTROLLER = 9998  # Port to listen on (action data sent to here)
+    PORT_DAYDREAMER = 9999  # Port to connect to (observ data emitted from here)
+    GPS_BEACON = [2.59, -3.01, 0.624]  # [x,y,z] of goal position
+    D_THRESHOLD = 0.5  # Distance threshold for goal position
+    RECV_SIZE = 8  # Size of the received data
+    BUFFER_SIZE = 1024  # Size of the buffer for sending data
 
-    spot_robot = Supervisor() # Not Robot() since we need to control the env for reset
-    timestep = int(spot_robot.getBasicTimeStep()) # 32ms
+    spot_robot = Supervisor()  # Not Robot() since we need to control the env for reset
+    timestep = int(spot_robot.getBasicTimeStep())  # 32ms
 
     ## Sensor Initialization ##
 
     # (12) Motors (controller.motor.Motor)
     f_l_s_a_motor = spot_robot.getDevice("front left shoulder abduction motor")
     f_l_s_r_motor = spot_robot.getDevice("front left shoulder rotation motor")
-    f_l_e_motor   = spot_robot.getDevice("front left elbow motor")
+    f_l_e_motor = spot_robot.getDevice("front left elbow motor")
     f_r_s_a_motor = spot_robot.getDevice("front right shoulder abduction motor")
     f_r_s_r_motor = spot_robot.getDevice("front right shoulder rotation motor")
-    f_r_e_motor   = spot_robot.getDevice("front right elbow motor")
+    f_r_e_motor = spot_robot.getDevice("front right elbow motor")
     r_l_s_a_motor = spot_robot.getDevice("rear left shoulder abduction motor")
     r_l_s_r_motor = spot_robot.getDevice("rear left shoulder rotation motor")
-    r_l_e_motor   = spot_robot.getDevice("rear left elbow motor")
+    r_l_e_motor = spot_robot.getDevice("rear left elbow motor")
     r_r_s_a_motor = spot_robot.getDevice("rear right shoulder abduction motor")
     r_r_s_r_motor = spot_robot.getDevice("rear right shoulder rotation motor")
-    r_r_e_motor   = spot_robot.getDevice("rear right elbow motor")
+    r_r_e_motor = spot_robot.getDevice("rear right elbow motor")
     # Input range is [-1;1]
 
     # (5) Cameras (controller.camera.Camera)
-    l_h_cam = spot_robot.getDevice('left head camera')   # (1080,720)
-    r_h_cam = spot_robot.getDevice('right head camera')  # (1080,720)
+    l_h_cam = spot_robot.getDevice("left head camera")  # (1080,720)
+    r_h_cam = spot_robot.getDevice("right head camera")  # (1080,720)
     l_f_cam = spot_robot.getDevice("left flank camera")  # (1080,720)
-    r_f_cam = spot_robot.getDevice("right flank camera") # (1080,720)
-    r_cam   = spot_robot.getDevice("rear camera")        # (1080,720)
+    r_f_cam = spot_robot.getDevice("right flank camera")  # (1080,720)
+    r_cam = spot_robot.getDevice("rear camera")  # (1080,720)
 
     # (1) GPS (controller.gps.GPS)
     gps = spot_robot.getDevice("gps")
 
     # Lists of all motors and cameras
-    motors: list = [f_l_s_a_motor, f_l_s_r_motor, f_l_e_motor, f_r_s_a_motor, f_r_s_r_motor, f_r_e_motor,
-                    r_l_s_a_motor, r_l_s_r_motor, r_l_e_motor, r_r_s_a_motor, r_r_s_r_motor, r_r_e_motor]
+    motors: list = [
+        f_l_s_a_motor,
+        f_l_s_r_motor,
+        f_l_e_motor,
+        f_r_s_a_motor,
+        f_r_s_r_motor,
+        f_r_e_motor,
+        r_l_s_a_motor,
+        r_l_s_r_motor,
+        r_l_e_motor,
+        r_r_s_a_motor,
+        r_r_s_r_motor,
+        r_r_e_motor,
+    ]
     cameras: list = [l_h_cam, r_h_cam, l_f_cam, r_f_cam, r_cam]
 
     ## Sensor Activation ##
@@ -77,18 +89,19 @@ if __name__ == "__main__":
         :param time_taken: Passed time in this episode
         :return: Reward value for the current state
         """
-        base_reward = 100.0 # Max attainble reward
+        base_reward = 100.0  # Max attainble reward
 
         # Penalize harshly for out-of-range actions
         base_reward -= penalty * 25.0
 
         reward = base_reward - (0.1 * time_taken)
-        if not (time_taken > 0
-                and GPS_BEACON[0] + D_THRESHOLD > gps[0] > GPS_BEACON[0] - D_THRESHOLD
-                and GPS_BEACON[1] + D_THRESHOLD > gps[1] > GPS_BEACON[1] - D_THRESHOLD):
+        if not (
+            time_taken > 0
+            and GPS_BEACON[0] + D_THRESHOLD > gps[0] > GPS_BEACON[0] - D_THRESHOLD
+            and GPS_BEACON[1] + D_THRESHOLD > gps[1] > GPS_BEACON[1] - D_THRESHOLD
+        ):
             reward -= 0.85 * (abs(GPS_BEACON[0] - gps[0]) + abs(GPS_BEACON[1] - gps[1]))
         return reward
-
 
     def act_out(action: dict) -> float:
         """
@@ -104,13 +117,18 @@ if __name__ == "__main__":
             max_position = motor.getMaxPosition()
 
             if not (min_position <= motor_position <= max_position):
-                total_penalty += abs(min_position - motor_position) if motor_position < min_position else abs(motor_position - max_position)
+                total_penalty += (
+                    abs(min_position - motor_position)
+                    if motor_position < min_position
+                    else abs(motor_position - max_position)
+                )
 
         # Scale action from [-1, 1] to [min_position, max_position]
-        scaled_position = min_position + (motor_position + 1) * 0.5 * (max_position - min_position)
+        scaled_position = min_position + (motor_position + 1) * 0.5 * (
+            max_position - min_position
+        )
         motor.setPosition(scaled_position)
         return total_penalty
-
 
     def get_env_state(cameras: list) -> list:
         """
@@ -126,8 +144,9 @@ if __name__ == "__main__":
         r_h_img = cv2.cvtColor(r_h_img, cv2.COLOR_BGR2RGB).reshape(720, 1080, 3)
         resized_l_h_img = cv2.resize(l_h_img, (128, 64), interpolation=cv2.INTER_AREA)
         resized_r_h_img = cv2.resize(r_h_img, (128, 64), interpolation=cv2.INTER_AREA)
-        return np.concatenate((resized_r_h_img, resized_l_h_img), axis=1).tolist() # 64x256x3; NumPy array would cause havoc in JSON serialization
-
+        return np.concatenate(
+            (resized_r_h_img, resized_l_h_img), axis=1
+        ).tolist()  # 64x256x3; NumPy array would cause havoc in JSON serialization
 
     def shutdown() -> None:
         """
@@ -135,7 +154,6 @@ if __name__ == "__main__":
         """
         socket_in.close()
         socket_out.close()
-
 
     ## Socket-based interconnection ##
 
@@ -166,7 +184,9 @@ if __name__ == "__main__":
             ## Actio
             ########
             try:
-                full_data = conn.recv(int.from_bytes(conn.recv(RECV_SIZE), byteorder="big"))
+                full_data = conn.recv(
+                    int.from_bytes(conn.recv(RECV_SIZE), byteorder="big")
+                )
                 action_data = full_data.decode()
                 action = json.loads(action_data)
                 # Process the received JSON object here
@@ -204,8 +224,20 @@ if __name__ == "__main__":
             obs = {
                 "image": get_env_state(cameras),
                 "reset": was_reset,
-                "done": True if current_gps and (GPS_BEACON[0] + D_THRESHOLD > current_gps[0] > GPS_BEACON[0] - D_THRESHOLD and GPS_BEACON[1] + D_THRESHOLD > current_gps[1] > GPS_BEACON[1] - D_THRESHOLD) else False,
-                "reward": calculate_reward(current_gps, time_taken, oor_penalty) # https://cyberbotics.com/doc/reference/gps?tab-language=python#wb_gps_get_values
+                "done": True
+                if current_gps
+                and (
+                    GPS_BEACON[0] + D_THRESHOLD
+                    > current_gps[0]
+                    > GPS_BEACON[0] - D_THRESHOLD
+                    and GPS_BEACON[1] + D_THRESHOLD
+                    > current_gps[1]
+                    > GPS_BEACON[1] - D_THRESHOLD
+                )
+                else False,
+                "reward": calculate_reward(
+                    current_gps, time_taken, oor_penalty
+                ),  # https://cyberbotics.com/doc/reference/gps?tab-language=python#wb_gps_get_values
             }
 
             # Send to DayDreamer -> JSON object
@@ -215,7 +247,7 @@ if __name__ == "__main__":
 
             sent_bytes = 0
             while sent_bytes < data_length:
-                chunk = json_data[sent_bytes:sent_bytes + BUFFER_SIZE]
+                chunk = json_data[sent_bytes : sent_bytes + BUFFER_SIZE]
                 sent_bytes += socket_out.send(chunk)
 
             time_taken += 1

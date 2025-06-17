@@ -1,22 +1,22 @@
 import gym
 import numpy as np
 
+
 class DeepMindControl:
-
     def __init__(self, name, seed, size=(64, 64), camera=None):
-
-        domain, task = name.split('-', 1)
-        if domain == 'cup':  # Only domain with multiple words.
-          domain = 'ball_in_cup'
+        domain, task = name.split("-", 1)
+        if domain == "cup":  # Only domain with multiple words.
+            domain = "ball_in_cup"
         if isinstance(domain, str):
-          from dm_control import suite
-          self._env = suite.load(domain, task, task_kwargs={'random':seed})
+            from dm_control import suite
+
+            self._env = suite.load(domain, task, task_kwargs={"random": seed})
         else:
-          assert task is None
-          self._env = domain()
+            assert task is None
+            self._env = domain()
         self._size = size
         if camera is None:
-          camera = dict(quadruped=2).get(domain, 0)
+            camera = dict(quadruped=2).get(domain, 0)
         self._camera = camera
 
         print(self._env)
@@ -26,8 +26,8 @@ class DeepMindControl:
     def observation_space(self):
         spaces = {}
         for key, value in self._env.observation_spec().items():
-          spaces[key] = gym.spaces.Box(-np.inf, np.inf, value.shape, dtype=np.float32)
-        spaces['image'] = gym.spaces.Box(0, 255, (3,) + self._size , dtype=np.uint8)
+            spaces[key] = gym.spaces.Box(-np.inf, np.inf, value.shape, dtype=np.float32)
+        spaces["image"] = gym.spaces.Box(0, 255, (3,) + self._size, dtype=np.uint8)
         # Initial return is this: Dict('image': Box(0, 255, (3, 64, 64), uint8), 'position': Box(-inf, inf, (3,), float32), 'velocity': Box(-inf, inf, (2,), float32))
         return gym.spaces.Dict(spaces)
 
@@ -40,10 +40,10 @@ class DeepMindControl:
     def step(self, action):
         time_step = self._env.step(action)
         obs = dict(time_step.observation)
-        obs['image'] = self.render().transpose(2, 0, 1).copy()
+        obs["image"] = self.render().transpose(2, 0, 1).copy()
         reward = time_step.reward or 0
         done = time_step.last()
-        info = {'discount': np.array(time_step.discount, np.float32)}
+        info = {"discount": np.array(time_step.discount, np.float32)}
         # obs: Dict ['position': (3,), 'velocity': (2,), 'image': (3, 64, 64)], reward:0.9556776085533385, done:False, info:{'discount': array(1., dtype=float32)}
         # image: (3, 64, 64) [0, 255]
         return obs, reward, done, info
@@ -51,18 +51,17 @@ class DeepMindControl:
     def reset(self):
         time_step = self._env.reset()
         obs = dict(time_step.observation)
-        obs['image'] = self.render().transpose(2, 0, 1).copy()
+        obs["image"] = self.render().transpose(2, 0, 1).copy()
         return obs
 
     def render(self, *args, **kwargs):
-        if kwargs.get('mode', 'rgb_array') != 'rgb_array':
-          raise ValueError("Only render mode 'rgb_array' is supported.")
+        if kwargs.get("mode", "rgb_array") != "rgb_array":
+            raise ValueError("Only render mode 'rgb_array' is supported.")
         # <class 'numpy.ndarray'> (64, 64, 3) [0, 255]
         return self._env.physics.render(*self._size, camera_id=self._camera)
 
 
 class TimeLimit:
-
     def __init__(self, env, duration):
         self._env = env
         self._duration = duration
@@ -72,14 +71,14 @@ class TimeLimit:
         return getattr(self._env, name)
 
     def step(self, action):
-        assert self._step is not None, 'Must reset environment.'
+        assert self._step is not None, "Must reset environment."
         obs, reward, done, info = self._env.step(action)
         self._step += 1
         if self._step >= self._duration:
-          done = True
-          if 'discount' not in info:
-            info['discount'] = np.array(1.0).astype(np.float32)
-          self._step = None
+            done = True
+            if "discount" not in info:
+                info["discount"] = np.array(1.0).astype(np.float32)
+            self._step = None
         return obs, reward, done, info
 
     def reset(self):
@@ -88,7 +87,6 @@ class TimeLimit:
 
 
 class ActionRepeat:
-
     def __init__(self, env, amount):
         self._env = env
         self._amount = amount
@@ -101,19 +99,18 @@ class ActionRepeat:
         total_reward = 0
         current_step = 0
         while current_step < self._amount and not done:
-          obs, reward, done, info = self._env.step(action)
-          total_reward += reward
-          current_step += 1
+            obs, reward, done, info = self._env.step(action)
+            total_reward += reward
+            current_step += 1
         return obs, total_reward, done, info
 
 
 class NormalizeActions:
-
     def __init__(self, env):
         self._env = env
         self._mask = np.logical_and(
-            np.isfinite(env.action_space.low),
-            np.isfinite(env.action_space.high))
+            np.isfinite(env.action_space.low), np.isfinite(env.action_space.high)
+        )
         self._low = np.where(self._mask, env.action_space.low, -1)
         self._high = np.where(self._mask, env.action_space.high, 1)
 
@@ -133,8 +130,7 @@ class NormalizeActions:
 
 
 class ObsDict:
-
-    def __init__(self, env, key='obs'):
+    def __init__(self, env, key="obs"):
         self._env = env
         self._key = key
 
@@ -162,7 +158,6 @@ class ObsDict:
 
 
 class OneHotAction:
-
     def __init__(self, env):
         assert isinstance(env.action_space, gym.spaces.Discrete)
         self._env = env
@@ -182,7 +177,7 @@ class OneHotAction:
         reference = np.zeros_like(action)
         reference[index] = 1
         if not np.allclose(reference, action):
-          raise ValueError(f'Invalid one-hot action:\n{action}')
+            raise ValueError(f"Invalid one-hot action:\n{action}")
         return self._env.step(index)
 
     def reset(self):
@@ -197,7 +192,6 @@ class OneHotAction:
 
 
 class RewardObs:
-
     def __init__(self, env):
         self._env = env
 
@@ -207,60 +201,62 @@ class RewardObs:
     @property
     def observation_space(self):
         spaces = self._env.observation_space.spaces
-        assert 'reward' not in spaces
-        spaces['reward'] = gym.spaces.Box(-np.inf, np.inf, dtype=np.float32)
+        assert "reward" not in spaces
+        spaces["reward"] = gym.spaces.Box(-np.inf, np.inf, dtype=np.float32)
         return gym.spaces.Dict(spaces)
 
     def step(self, action):
         obs, reward, done, info = self._env.step(action)
-        obs['reward'] = reward
+        obs["reward"] = reward
         return obs, reward, done, info
 
     def reset(self):
         obs = self._env.reset()
-        obs['reward'] = 0.0
+        obs["reward"] = 0.0
         return obs
 
 
 class ResizeImage:
-
     def __init__(self, env, size=(64, 64)):
         self._env = env
         self._size = size
         self._keys = [
-            k for k, v in env.obs_space.items()
-            if len(v.shape) > 1 and v.shape[:2] != size]
-        print(f'Resizing keys {",".join(self._keys)} to {self._size}.')
+            k
+            for k, v in env.obs_space.items()
+            if len(v.shape) > 1 and v.shape[:2] != size
+        ]
+        print(f"Resizing keys {','.join(self._keys)} to {self._size}.")
         if self._keys:
-          from PIL import Image
-          self._Image = Image
+            from PIL import Image
+
+            self._Image = Image
 
     def __getattr__(self, name):
-        if name.startswith('__'):
-          raise AttributeError(name)
+        if name.startswith("__"):
+            raise AttributeError(name)
         try:
-          return getattr(self._env, name)
+            return getattr(self._env, name)
         except AttributeError:
-          raise ValueError(name)
+            raise ValueError(name)
 
     @property
     def obs_space(self):
         spaces = self._env.obs_space
         for key in self._keys:
-          shape = self._size + spaces[key].shape[2:]
-          spaces[key] = gym.spaces.Box(0, 255, shape, np.uint8)
+            shape = self._size + spaces[key].shape[2:]
+            spaces[key] = gym.spaces.Box(0, 255, shape, np.uint8)
         return spaces
 
     def step(self, action):
         obs = self._env.step(action)
         for key in self._keys:
-          obs[key] = self._resize(obs[key])
+            obs[key] = self._resize(obs[key])
         return obs
 
     def reset(self):
         obs = self._env.reset()
         for key in self._keys:
-          obs[key] = self._resize(obs[key])
+            obs[key] = self._resize(obs[key])
         return obs
 
     def _resize(self, image):
@@ -271,19 +267,18 @@ class ResizeImage:
 
 
 class RenderImage:
-
-    def __init__(self, env, key='image'):
+    def __init__(self, env, key="image"):
         self._env = env
         self._key = key
         self._shape = self._env.render().shape
 
     def __getattr__(self, name):
-        if name.startswith('__'):
-          raise AttributeError(name)
+        if name.startswith("__"):
+            raise AttributeError(name)
         try:
-          return getattr(self._env, name)
+            return getattr(self._env, name)
         except AttributeError:
-          raise ValueError(name)
+            raise ValueError(name)
 
     @property
     def obs_space(self):
@@ -293,10 +288,10 @@ class RenderImage:
 
     def step(self, action):
         obs = self._env.step(action)
-        obs[self._key] = self._env.render('rgb_array')
+        obs[self._key] = self._env.render("rgb_array")
         return obs
 
     def reset(self):
         obs = self._env.reset()
-        obs[self._key] = self._env.render('rgb_array')
+        obs[self._key] = self._env.render("rgb_array")
         return obs
