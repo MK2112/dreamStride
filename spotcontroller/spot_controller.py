@@ -109,9 +109,6 @@ if __name__ == "__main__":
         """
         base_reward = 100.0  # Max attainble reward
 
-        # Penalize harshly for out-of-range actions
-        base_reward -= penalty * 25.0
-
         reward = base_reward - (0.1 * time_taken)
         if not (
             time_taken > 0
@@ -126,27 +123,20 @@ if __name__ == "__main__":
         Actuate the motors based on the received action
         As long as the action indices don't change within controller, this relationship should just be learnable
         :param action: Dict, expected to look like {'i': value, 'j': value, 'k': value} with i,j,k being motor indices
-        :return: Penalty for out-of-range actions
+        :return: Penalty for out-of-range actions (Always 0.0)
         """
-        total_penalty = 0.0
         for i, motor in enumerate(motors):
             motor_position = action[str(i)]
             min_position = motor.getMinPosition()
             max_position = motor.getMaxPosition()
 
-            if not (min_position <= motor_position <= max_position):
-                total_penalty += (
-                    abs(min_position - motor_position)
-                    if motor_position < min_position
-                    else abs(motor_position - max_position)
-                )
-
-        # Scale action from [-1, 1] to [min_position, max_position]
-        scaled_position = min_position + (motor_position + 1) * 0.5 * (
-            max_position - min_position
-        )
-        motor.setPosition(scaled_position)
-        return total_penalty
+            # Input action is in range [-1, 1] (tanh output from agent)
+            # Map [-1, 1] to [min_position, max_position]
+            scaled_position = min_position + (motor_position + 1) * 0.5 * (
+                max_position - min_position
+            )
+            motor.setPosition(scaled_position)
+        return 0.0
 
     def get_env_state(cameras: list) -> list:
         """
@@ -157,7 +147,8 @@ if __name__ == "__main__":
         # I really tried with getImage, but patience wore thin, Numpy prevailed
         l_h_img = np.array(cameras[0].getImageArray()).astype(np.uint8)
         r_h_img = np.array(cameras[1].getImageArray()).astype(np.uint8)
-        # I just can't with this resizing stuff, takes eternities to run and barely gets the stuff anywhere effectively
+
+        # Resize using CV2 (assuming cv2 is imported)
         l_h_img = cv2.cvtColor(l_h_img, cv2.COLOR_BGR2RGB).reshape(720, 1080, 3)
         r_h_img = cv2.cvtColor(r_h_img, cv2.COLOR_BGR2RGB).reshape(720, 1080, 3)
         resized_l_h_img = cv2.resize(l_h_img, (128, 64), interpolation=cv2.INTER_AREA)
@@ -167,9 +158,6 @@ if __name__ == "__main__":
         ).tolist()  # 64x256x3; NumPy array would cause havoc in JSON serialization
 
     def shutdown() -> None:
-        """
-        Gracefully shut down the sockets and simulation
-        """
         socket_in.close()
         socket_out.close()
 
@@ -219,7 +207,7 @@ if __name__ == "__main__":
             oor_penalty = 0.0
 
             # Check if action contains reset dict key
-            if not "reset" in action:
+            if "reset" not in action:
                 action["reset"] = 0
 
             if action["reset"] == 1:
@@ -227,6 +215,7 @@ if __name__ == "__main__":
                 time_taken = 0
                 was_reset = 1
                 spot_robot.simulationReset()
+                spot_robot.step(timestep)
             else:
                 action.pop("reset")
                 oor_penalty = act_out(action)
@@ -243,14 +232,20 @@ if __name__ == "__main__":
                 "image": get_env_state(cameras),
                 "reset": was_reset,
                 "done": True
-                if current_gps
-                and (
-                    GPS_BEACON[0] + D_THRESHOLD
-                    > current_gps[0]
-                    > GPS_BEACON[0] - D_THRESHOLD
-                    and GPS_BEACON[1] + D_THRESHOLD
-                    > current_gps[1]
-                    > GPS_BEACON[1] - D_THRESHOLD
+                if (
+                    current_gps
+                    and (
+                        GPS_BEACON[0] + D_THRESHOLD
+                        > current_gps[0]
+                        > GPS_BEACON[0] - D_THRESHOLD
+                        and GPS_BEACON[1] + D_THRESHOLD
+                        > current_gps[1]
+                        > GPS_BEACON[1] - D_THRESHOLD
+                    )
+                )
+                or (
+                    # 0.35m is the default height of the robot, allow some leeway (0.2m) for moves
+                    current_gps and current_gps[2] < 0.2
                 )
                 else False,
                 "reward": calculate_reward(
