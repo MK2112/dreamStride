@@ -40,12 +40,12 @@ For more information:
 
 ## Setup
 
-1) Install WeBots R2025a.
-2) Create a VEnv or Conda environment. Select the Python version to be `3.9.0`.
-3) Install the required packages using the following command: `pip install -r requirements.txt`.
-4) This project is being written in PyCharm. Open the project in PyCharm and set the Python interpreter to the one created in step $2$.
-5) Follow the PyCharm-specific instructions in the [WeBots documentation](https://cyberbotics.com/doc/guide/using-your-ide?tab-language=c%20%20&tab-os=windows#pycharm)
-   - The WeBots controller file is located at `./spotcontroller/spot_controller.py`. 
+1) Install [WeBots](https://cyberbotics.com/).
+2) Create a VEnv or Conda environment. Select the Python version compatible with WeBots (see [here](https://cyberbotics.com/doc/guide/using-python), this project was written with Python `3.9.0`).
+3) Install the required packages: `pip install -r requirements.txt`.
+4) This project was written in [PyCharm](https://www.jetbrains.com/pycharm/). If you use PyCharm as well, open the project there and set the Python interpreter to the one created in step $2$.
+5) Follow the PyCharm-specific instructions in the [WeBots documentation](https://cyberbotics.com/doc/guide/using-your-ide?tab-language=c%20%20&tab-os=windows#pycharm).
+   - The WeBots controller file is located at `./spotcontroller/spot_controller.py`.
 
 ## Training
 
@@ -67,19 +67,13 @@ in a performant and modular manner. To do so, we aim for this architecture:
 
 ![](/img/archi.png)
 
-A core part of the training adaptation for WeBots and the Spot robot therein
-was realized within `./spotcontroller/spot_controller.py`. This file is responsible for
-communicating with the WeBots simulation environment, acting out the actions,
-perceiving the observations, and providing the rewards to the DayDreamer algorithm.
-Communication between DayDreamer and WeBots was realized through a double socket connection for 
-modularity and extendability.
+A core part of the training adaptation for WeBots and the Spot robot therein was realized within `./spotcontroller/spot_controller.py`. This file is responsible for communicating with the WeBots simulation environment, acting out the actions, perceiving the observations, and providing the rewards to the DayDreamer algorithm. Communication between DayDreamer and WeBots was realized through a double socket connection for modularity and extendability.
 
 The counterpart to the `./spotcontroller/spot_controller.py` is the `spot_wrapper.py`.<br>
 It receives actions derived by the algorithm, formats and packages them nicely, and sends them to the controller.<br>
 In turn, it also receives observations and rewards, and formats them and then forwards them to the algorithm.
 
-Additional modifications have been made throughout the implementation, but, in general,
-`spot_controller.py`, `spot_wrapper.py`, and `dreamer.py` are the main files that can serve as good points of entry.
+Additional modifications have been made throughout the implementation, but, in general, `spot_controller.py`, `spot_wrapper.py`, and `dreamer.py` are the main files that can serve as good points of entry.
 
 An example WeBots world for the Spot robot is located at `./SimulationEnv/worlds/DayDreamerWorld.wbt`:
 
@@ -93,26 +87,7 @@ An example WeBots world for the Spot robot is located at `./SimulationEnv/worlds
 
 ## Roadmap
 
-- [x] Project structure and repository initialization
-- [x] Integration and adaptation of the DayDreamer implementation for Webots
-- [x] Creation and configuration of the Webots simulation environment with the Spot robot ([SimulationEnv/worlds/DayDreamerWorld.wbt](SimulationEnv/worlds/DayDreamerWorld.wbt))
-- [x] Development of the Spot controller for robot control and observation in Webots ([spotcontroller/spot\_controller.py](spotcontroller/spot_controller.py))
-- [x] Establishment of bidirectional socket communication between the DayDreamer algorithm and the Webots controller
-- [x] Implementation of the wrapper to translate between algorithm and controller ([spot\_wrapper.py](spot_wrapper.py))
-- [x] Adjustment and integration of the training process for the Webots environment ([dreamer.py](dreamer.py))
-- [x] Implementation and testing of the replay buffer, logger, and utilities
-- [x] Documentation of setup and training steps in the README
-- [x] Provision of example images and architecture overview
-- [ ] Extension and optimization of the training and evaluation scripts for more/different simulated environments
-- [ ] Development and integration of logging and visualization tools for training progress and model performance
-- [ ] Improvement of codebase modularity and extensibility for additional robot types and tasks
-- [ ] Testing out new and more interpretable reward functions that effectively guide smaller RL agents to achieve complex goals while balancing multiple, potentially conflicting objectives
-- [ ] Preparation and release of tutorials, examples, and further documentation
-
-## Short-Term TODO
-
-- [ ] Enforce naming conventions, linting
-- [ ] Outsource common parameters to a config json
-- [ ] Distinguish and fix MUJOCO implementation from WeBots implementation
-- [ ] Add more comments and docstrings, specifically to the dreamer implementation
-- [ ] Go over distributed training elements
+- [ ] Extend and optimize training and evaluation scripts for more/different simulated environments
+- [ ] Integrate logging and visualization tools for training progress and model performance
+- [ ] Improve codebase modularity and extensibility for additional robot types, tasks
+- [ ] Test new, more interpretable reward functions that effectively guide smaller RL agents to achieve complex goals while balancing multiple, potentially conflicting objectives
