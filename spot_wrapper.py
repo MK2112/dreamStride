@@ -93,7 +93,7 @@ class SpotControl:
         # obs: Dict ['position': (3,), 'velocity': (2,), 'image': (3, 64, 64)], reward:0.9556776085533385, done:False, info:{'discount': array(1., dtype=float32)}
         # image: (3, 64, 64) [0, 255]
 
-        done = False if self.iters_counter < self.world_iters else True
+        done = obs["done"] or (self.iters_counter >= self.world_iters)
         self.iters_counter = (
             self.iters_counter + 1 if self.iters_counter < self.world_iters else 0
         )
@@ -112,6 +112,9 @@ class SpotControl:
     def reset(self):
         ## Actio: Send network output to WeBots
         # Action is {1: 0.1, 2: 0.2, ..., 12: 0.12, 'reset': 0}
+
+        # New episode resets to full self.world_iters-step budget
+        self.iters_counter = 0
 
         np_actions = np.random.uniform(-1, 1, 12)
         action = {str(i): np_actions[i] for i in range(12)}
