@@ -1,8 +1,10 @@
-import random
-import time
-import argparse
-import json
 import os
+import json
+import time
+import torch
+import random
+import argparse
+import numpy as np
 import torch.nn as nn
 import torch.optim as optim
 import torch.distributions as distributions
@@ -14,7 +16,7 @@ import spot_wrapper
 
 from replay_buffer import ReplayBuffer
 from models import RSSM, ConvEncoder, ConvDecoder, DenseDecoder, ActionDecoder
-from utils import *
+from utils import Logger, compute_return, FreezeParameters
 
 # os.environ["MUJOCO_GL"] = "egl"  # Moved to main with check
 
@@ -218,10 +220,10 @@ class Dreamer:
                 kl_loss, kl_loss.new_full(kl_loss.size(), self.args.free_nats)
             )
 
-        obs_loss = -torch.mean(obs_dist.log_prob(obs[1:]))
-        rew_loss = -torch.mean(rew_dist.log_prob(rews[:-1]))
+        obs_loss = torch.mean(obs_dist.log_prob(obs[1:])) * -1.0
+        rew_loss = torch.mean(rew_dist.log_prob(rews[:-1])) * -1.0
         if self.args.use_disc_model:
-            disc_loss = -torch.mean(disc_dist.log_prob(nonterms[:-1]))
+            disc_loss = torch.mean(disc_dist.log_prob(nonterms[:-1])) * -1.0
 
         if self.args.use_disc_model:
             model_loss = (
@@ -274,12 +276,13 @@ class Dreamer:
     def value_loss(self):
         with torch.no_grad():
             value_feat = self.imag_feat[:-1].detach()
-            discount = self.discounts.detach()
+            # discount = self.discounts.detach()
             value_targ = self.returns.detach()
 
         value_dist = self.value_model(value_feat)
-        value_loss = -torch.mean(
-            self.discounts * value_dist.log_prob(value_targ).unsqueeze(-1)
+        value_loss = (
+            torch.mean(self.discounts * value_dist.log_prob(value_targ).unsqueeze(-1))
+            * -1.0
         )
 
         return value_loss
@@ -453,7 +456,7 @@ def main():
     ) as f:
         config = json.load(f)
 
-    if args.env.startswith("walker"):
+    if config["env"].startswith("walker"):
         os.environ["MUJOCO_GL"] = "egl"
 
     parser = argparse.ArgumentParser()
