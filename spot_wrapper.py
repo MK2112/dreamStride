@@ -1,6 +1,7 @@
+import os
 import gym
-import socket
 import json
+import socket
 import numpy as np
 
 
@@ -8,11 +9,17 @@ class SpotControl:
     def __init__(self, size=(64, 256)):
         self.size = size
 
-        self.HOST = "localhost"
-        self.PORT_OUT = 9998
-        self.PORT_IN = 9999
-        self.RECV_SIZE = 8
-        self.BUFFER_SIZE = 1024
+        with open(
+            os.path.join(os.path.dirname(os.path.realpath(__file__)), "config.json"),
+            "r",
+        ) as f:
+            config = json.load(f)
+
+        self.HOST = config["socket"]["host"]
+        self.PORT_OUT = config["socket"]["port_controller"]
+        self.PORT_IN = config["socket"]["port_daydreamer"]
+        self.RECV_SIZE = config["socket"]["recv_size"]
+        self.BUFFER_SIZE = config["socket"]["buffer_size"]
         self.world_iters = 256  # Training event limit
         self.iters_counter = 0  # Training event counter
         print("[+] Integrator started.")
@@ -27,6 +34,7 @@ class SpotControl:
         print("[+] Reverse connection established")
         self._socket_in.listen()
         self.conn, self.addr = self._socket_in.accept()
+        self.conn.settimeout(30.0)  # 30 seconds timeout
         print(f"[+] Connected to controller at {self.addr}")
 
     def receive_all(self, conn: socket.socket, length: int) -> bytes:

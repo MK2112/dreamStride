@@ -1,6 +1,8 @@
 import random
 import time
 import argparse
+import json
+import os
 import torch.nn as nn
 import torch.optim as optim
 import torch.distributions as distributions
@@ -14,7 +16,7 @@ from replay_buffer import ReplayBuffer
 from models import RSSM, ConvEncoder, ConvDecoder, DenseDecoder, ActionDecoder
 from utils import *
 
-os.environ["MUJOCO_GL"] = "egl"
+# os.environ["MUJOCO_GL"] = "egl"  # Moved to main with check
 
 ## Our Implementation:
 # python dreamer.py --env spot-walk --algo Dreamerv2 --exp spot-webots --train
@@ -446,103 +448,145 @@ class Dreamer:
 
 
 def main():
+    with open(
+        os.path.join(os.path.dirname(os.path.realpath(__file__)), "config.json"), "r"
+    ) as f:
+        config = json.load(f)
+
+    if args.env.startswith("walker"):
+        os.environ["MUJOCO_GL"] = "egl"
+
     parser = argparse.ArgumentParser()
 
     # General parameters
     parser.add_argument(
-        "--env", type=str, default="spot-walk", help="Control Suite environment"
+        "--env", type=str, default=config["env"], help="Control Suite environment"
     )
     parser.add_argument(
         "--algo",
         type=str,
-        default="Dreamerv2",
+        default=config["algo"],
         choices=["Dreamerv1", "Dreamerv2"],
         help="Applied algorithm",
     )
     parser.add_argument(
-        "--exp", type=str, default="spot-webots", help="Name of experiment for logging"
+        "--exp", type=str, default=config["exp"], help="Name of experiment for logging"
     )
     parser.add_argument("--train", action="store_true", help="Train the model")
     parser.add_argument("--evaluate", action="store_true", help="Test the model")
     parser.add_argument(
         "--seed",
         type=int,
-        default=1,
+        default=config["seed"],
         help="Seed for random number generator reproductibility",
     )
     parser.add_argument("--gpu", action="store_false", help="GPUs are used if passed")
 
     # Data parameters
     parser.add_argument(
-        "--max-episode-length", type=int, default=1000, help="Max episode length"
+        "--max-episode-length",
+        type=int,
+        default=config["max_episode_length"],
+        help="Max episode length",
     )
     parser.add_argument(
-        "--buffer-size", type=int, default=1000000, help="Replay buffer size"
+        "--buffer-size",
+        type=int,
+        default=config["buffer_size"],
+        help="Replay buffer size",
     )
-    parser.add_argument("--time-limit", type=int, default=2000, help="Time limit")
+    parser.add_argument(
+        "--time-limit", type=int, default=config["time_limit"], help="Time limit"
+    )
 
     # Models parameters
     parser.add_argument(
         "--cnn-activation-function",
         type=str,
-        default="relu",
+        default=config["cnn_activation_function"],
         help="Model activation function for a convolution layer",
     )
     parser.add_argument(
         "--dense-activation-function",
         type=str,
-        default="elu",
+        default=config["dense_activation_function"],
         help="Model activation function a dense layer",
     )
     parser.add_argument(
-        "--obs-embed-size", type=int, default=1024, help="Observation embedding size"
+        "--obs-embed-size",
+        type=int,
+        default=config["obs_embed_size"],
+        help="Observation embedding size",
     )  # Default Encoder for visual observations outputs a 1024D vector; for other embedding sizes an additional fully-connected layer is used
     parser.add_argument(
         "--num-units",
         type=int,
-        default=400,
+        default=config["num_units"],
         help="num hidden units for reward/value/discount models",
     )
     parser.add_argument(
         "--deter-size",
         type=int,
-        default=200,
+        default=config["deter_size"],
         help="GRU hidden size and deterministic belief size",
     )
     parser.add_argument(
-        "--stoch-size", type=int, default=32, help="Stochastic State/latent size"
+        "--stoch-size",
+        type=int,
+        default=config["stoch_size"],
+        help="Stochastic State/latent size",
     )  # Default z_state was 32x32 in DreamerV2
 
     # Actor Exploration Parameters
-    parser.add_argument("--action-repeat", type=int, default=2, help="Action repeat")
-    parser.add_argument("--action-noise", type=float, default=0.3, help="Action noise")
+    parser.add_argument(
+        "--action-repeat",
+        type=int,
+        default=config["action_repeat"],
+        help="Action repeat",
+    )
+    parser.add_argument(
+        "--action-noise",
+        type=float,
+        default=config["action_noise"],
+        help="Action noise",
+    )
 
     # Training parameters
     parser.add_argument(
-        "--total_steps", type=int, default=5e6, help="Total number of training steps"
+        "--total_steps",
+        type=int,
+        default=config["total_steps"],
+        help="Total number of training steps",
     )
-    parser.add_argument("--seed-steps", type=int, default=5000, help="Seed episodes")
+    parser.add_argument(
+        "--seed-steps", type=int, default=config["seed_steps"], help="Seed episodes"
+    )
     parser.add_argument(
         "--update-steps",
         type=int,
-        default=100,
+        default=config["update_steps"],
         help="Num of train update steps per iter",
     )
     parser.add_argument(
         "--collect-steps",
         type=int,
-        default=1000,
+        default=config["collect_steps"],
         help="Actor collect steps per 1 train iter",
     )
-    parser.add_argument("--batch-size", type=int, default=50, help="Batch size")
+    parser.add_argument(
+        "--batch-size", type=int, default=config["batch_size"], help="Batch size"
+    )
     parser.add_argument(
         "--train-seq-len",
         type=int,
-        default=50,
+        default=config["train_seq_len"],
         help="Sequence length for training world model",
     )  # As per official Tensorflow Implementation
     parser.add_argument(
-        "--imagine-horizon", type=int, default=15, help="Latent imagination horizon"
+        "--imagine-horizon",
+        type=int,
+        default=config["imagine_horizon"],
+        help="Latent imagination horizon",
     )  # As per H in DreamerV2 paper
     parser.add_argument(
         "--use-disc-model", action="store_true", help="Whether to use discount model"
@@ -550,30 +594,36 @@ def main():
 
     # Coeffecients and constants
     parser.add_argument(
-        "--free-nats", type=float, default=3, help="Free nats"
+        "--free-nats", type=float, default=config["free_nats"], help="Free nats"
     )  # Free nats for KL loss
     parser.add_argument(
-        "--discount", type=float, default=0.99, help="Discount factor for actor critic"
+        "--discount",
+        type=float,
+        default=config["discount"],
+        help="Discount factor for actor critic",
     )
     parser.add_argument(
-        "--td-lambda", type=float, default=0.95, help="Discount rate to compute return"
+        "--td-lambda",
+        type=float,
+        default=config["td_lambda"],
+        help="Discount rate to compute return",
     )
     parser.add_argument(
         "--kl-loss-coeff",
         type=float,
-        default=1.0,
+        default=config["kl_loss_coeff"],
         help="Weightage for kl_loss of model",
     )
     parser.add_argument(
         "--kl-alpha",
         type=float,
-        default=0.8,
+        default=config["kl_alpha"],
         help="KL balancing weight; used for Dreamerv2",
     )
     parser.add_argument(
         "--disc-loss-coeff",
         type=float,
-        default=10.0,
+        default=config["disc_loss_coeff"],
         help="Weightage of discount model",
     )
 
@@ -581,48 +631,72 @@ def main():
     parser.add_argument(
         "--model_learning-rate",
         type=float,
-        default=6e-4,
+        default=config["model_learning_rate"],
         help="World Model Learning rate",
     )
     parser.add_argument(
-        "--actor_learning-rate", type=float, default=8e-5, help="Actor Learning rate"
+        "--actor_learning-rate",
+        type=float,
+        default=config["actor_learning_rate"],
+        help="Actor Learning rate",
     )
     parser.add_argument(
         "--value_learning-rate",
         type=float,
-        default=8e-5,
+        default=config["value_learning_rate"],
         help="Value Model Learning rate",
     )
     parser.add_argument(
-        "--adam-epsilon", type=float, default=1e-7, help="Adam optimizer epsilon value"
+        "--adam-epsilon",
+        type=float,
+        default=config["adam_epsilon"],
+        help="Adam optimizer epsilon value",
     )
     parser.add_argument(
-        "--grad-clip-norm", type=float, default=100.0, help="Gradient clipping norm"
+        "--grad-clip-norm",
+        type=float,
+        default=config["grad_clip_norm"],
+        help="Gradient clipping norm",
     )
 
     # Eval parameters
     parser.add_argument("--test", action="store_true", help="Test only")
     parser.add_argument(
-        "--test-interval", type=int, default=10000, help="Test interval (episodes)"
+        "--test-interval",
+        type=int,
+        default=config["test_interval"],
+        help="Test interval (episodes)",
     )
     parser.add_argument(
-        "--test-episodes", type=int, default=10, help="Number of test episodes"
+        "--test-episodes",
+        type=int,
+        default=config["test_episodes"],
+        help="Number of test episodes",
     )
 
     # Saving and checkpoint parameters
     parser.add_argument(
-        "--scalar-freq", type=int, default=1e3, help="Scalar logging freq"
+        "--scalar-freq",
+        type=int,
+        default=config["scalar_freq"],
+        help="Scalar logging freq",
     )  # Amount of steps after which logging takes place
     parser.add_argument(
-        "--log-video-freq", type=int, default=-1, help="video logging frequency"
+        "--log-video-freq",
+        type=int,
+        default=config["log_video_freq"],
+        help="video logging frequency",
     )
     parser.add_argument(
-        "--max-videos-to-save", type=int, default=2, help="max_videos for saving"
+        "--max-videos-to-save",
+        type=int,
+        default=config["max_videos_to_save"],
+        help="max_videos for saving",
     )
     parser.add_argument(
         "--checkpoint-interval",
         type=int,
-        default=10000,
+        default=config["checkpoint_interval"],
         help="Checkpoint interval (episodes)",
     )  # Model Checkpoint
     parser.add_argument(
@@ -637,6 +711,7 @@ def main():
     parser.add_argument("--render", action="store_true", help="Render environment")
 
     args = parser.parse_args()
+
     data_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "data/")
 
     if not (os.path.exists(data_path)):

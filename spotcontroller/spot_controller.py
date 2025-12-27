@@ -3,6 +3,7 @@ import json
 import time
 import numpy as np
 import cv2
+import os
 from controller import Robot, Motor, Camera, Supervisor, GPS
 
 # This is indent ugly, but helps tons in PyCharm configuration
@@ -14,13 +15,30 @@ if __name__ == "__main__":
     All of this is done via socket-based communication to ensure a modular and extendable structure.
     """
 
-    HOST = "localhost"
-    PORT_CONTROLLER = 9998  # Port to listen on (action data sent to here)
-    PORT_DAYDREAMER = 9999  # Port to connect to (observ data emitted from here)
+    # Load config from one directory up
+    try:
+        config_path = os.path.join(
+            os.path.dirname(os.path.realpath(__file__)), "..", "config.json"
+        )
+        with open(config_path, "r") as f:
+            config = json.load(f)
+
+        HOST = config["socket"]["host"]
+        PORT_CONTROLLER = config["socket"]["port_controller"]
+        PORT_DAYDREAMER = config["socket"]["port_daydreamer"]
+        RECV_SIZE = config["socket"]["recv_size"]
+        BUFFER_SIZE = config["socket"]["buffer_size"]
+    except Exception as e:
+        print(f"[!] Failed to load config.json: {e}")
+        print("[!] Falling back to defaults")
+        HOST = "localhost"
+        PORT_CONTROLLER = 9998
+        PORT_DAYDREAMER = 9999
+        RECV_SIZE = 8
+        BUFFER_SIZE = 1024
+
     GPS_BEACON = [2.59, -3.01, 0.624]  # [x,y,z] of goal position
     D_THRESHOLD = 0.5  # Distance threshold for goal position
-    RECV_SIZE = 8  # Size of the received data
-    BUFFER_SIZE = 1024  # Size of the buffer for sending data
 
     spot_robot = Supervisor()  # Not Robot() since we need to control the env for reset
     timestep = int(spot_robot.getBasicTimeStep())  # 32ms
