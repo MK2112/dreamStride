@@ -20,7 +20,6 @@ class DeepMindControl:
         self._camera = camera
 
         print(self._env)
-        raise NotImplementedError
 
     @property
     def observation_space(self):

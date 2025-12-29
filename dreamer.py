@@ -12,7 +12,7 @@ import torch.distributions as distributions
 from collections import OrderedDict
 
 import env_wrapper
-import spot_wrapper
+import env_factory
 
 from replay_buffer import ReplayBuffer
 from models import RSSM, ConvEncoder, ConvDecoder, DenseDecoder, ActionDecoder
@@ -29,19 +29,7 @@ from utils import Logger, compute_return, FreezeParameters
 
 
 def make_env(args):
-    env = None
-
-    if args.env.startswith("walker"):
-        env = env_wrapper.DeepMindControl(args.env, args.seed)
-    elif args.env.startswith("spot"):
-        env = spot_wrapper.SpotControl(size=(64, 256))
-    else:
-        raise NotImplementedError
-
-    env = env_wrapper.ActionRepeat(env, args.action_repeat)
-    env = env_wrapper.NormalizeActions(env)
-    env = env_wrapper.TimeLimit(env, args.time_limit / args.action_repeat)
-    return env
+    return env_factory.make_env(args)
 
 
 def preprocess_obs(obs):
@@ -451,13 +439,31 @@ class Dreamer:
 
 
 def main():
-    with open(
-        os.path.join(os.path.dirname(os.path.realpath(__file__)), "config.json"), "r"
-    ) as f:
+    parser = argparse.ArgumentParser(add_help=True)
+    parser.add_argument(
+        "--config",
+        type=str,
+        default=os.path.join(os.path.dirname(os.path.realpath(__file__)), "config.json"),
+        help="Path to JSON config file",
+    )
+    parser.add_argument(
+        "--list-envs",
+        action="store_true",
+        help="List available environment prefixes and exit",
+    )
+
+    preliminary_args, _ = parser.parse_known_args()
+
+    with open(preliminary_args.config, "r") as f:
         config = json.load(f)
 
     if config["env"].startswith("walker"):
         os.environ["MUJOCO_GL"] = "egl"
+
+    if preliminary_args.list_envs:
+        for prefix, desc in env_factory.available_env_prefixes().items():
+            print(f"{prefix}: {desc}")
+        return
 
     parser = argparse.ArgumentParser()
 
@@ -685,6 +691,11 @@ def main():
         help="Scalar logging freq",
     )  # Amount of steps after which logging takes place
     parser.add_argument(
+        "--tensorboard",
+        action="store_true",
+        help="Enable TensorBoard logging (scalars and videos) in addition to existing logs",
+    )
+    parser.add_argument(
         "--log-video-freq",
         type=int,
         default=config["log_video_freq"],
@@ -743,7 +754,7 @@ def main():
     action_size = train_env.action_space.shape[0]
     dreamer = Dreamer(args, obs_shape, action_size, device, args.restore)
 
-    logger = Logger(logdir)
+    logger = Logger(logdir, use_tensorboard=args.tensorboard)
 
     if args.train:
         initial_logs = OrderedDict()
@@ -815,7 +826,7 @@ def main():
                 and args.log_video_freq != -1
                 and len(video_images[0]) != 0
             ):
-                logger.log_video(video_images, global_step, args.max_videos_to_save)
+                logger.log_videos(video_images, global_step, args.max_videos_to_save)
 
             if global_step % args.checkpoint_interval == 0:
                 ckpt_dir = os.path.join(logdir, "ckpts/")
