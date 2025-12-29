@@ -60,6 +60,15 @@ For more information:
    - Run evaluation: `python dreamer.py --env spot-walk --algo Dreamerv2 --exp spot-webots --evaluate`
    - If you have a CUDA-compatible GPU, you can add the `--gpu` flag to the command to use it.
 
+You can list supported environment prefixes via:
+`python dreamer.py --list-envs`
+
+You can also select a different JSON config file via:
+`python dreamer.py --config path/to/config.json ...`
+
+For training progress visualization, you can additionally enable TensorBoard logging (scalars + videos) via:
+`python dreamer.py --tensorboard ...`
+
 ## Implementation Details
 
 This implementation aims to integrate the operation of the DayDreamer algorithm with the WeBots platform
@@ -73,6 +82,8 @@ The counterpart to the `./spotcontroller/spot_controller.py` is the `spot_wrappe
 It receives actions derived by the algorithm, formats and packages them nicely, and sends them to the controller.<br>
 In turn, it also receives observations and rewards, and formats them and then forwards them to the algorithm.
 
+Environment creation is centralized in `env_factory.py`. It selects an environment based on the `--env` prefix (e.g. `spot-*` for the WeBots Spot integration via `spot_wrapper.py`, and `walker-*` for DeepMind Control Suite tasks via `env_wrapper.DeepMindControl`) and then applies common wrappers (action repeat, action normalization, and a time limit).
+
 Additional modifications have been made throughout the implementation, but, in general, `spot_controller.py`, `spot_wrapper.py`, and `dreamer.py` are the main files that can serve as good points of entry.
 
 An example WeBots world for the Spot robot is located at `./SimulationEnv/worlds/DayDreamerWorld.wbt`:
@@ -84,10 +95,3 @@ An example WeBots world for the Spot robot is located at `./SimulationEnv/worlds
 - `./data` will contain training logs and model checkpoints.
 - `./SimulationEnv` contains WeBots world files and other directly WeBots-related files.
 - `./spotcontroller` contains the WeBots Spot robot controller and a tester file `dummy_backend.py`
-
-## Roadmap
-
-- [ ] Extend and optimize training and evaluation scripts for more/different simulated environments
-- [ ] Integrate logging and visualization tools for training progress and model performance
-- [ ] Improve codebase modularity and extensibility for additional robot types, tasks
-- [ ] Test new, more interpretable reward functions that effectively guide smaller RL agents to achieve complex goals while balancing multiple, potentially conflicting objectives
