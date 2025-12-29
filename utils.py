@@ -1,11 +1,16 @@
 import os
-import pickle
 import torch
+import pickle
 import numpy as np
 from moviepy.video.io.ImageSequenceClip import ImageSequenceClip
 from summary_writer import SummaryWriter # replaces from tensorboardX import SummaryWriter
 from typing import Iterable
 from torch.nn import Module
+
+try:
+    from tensorboardX import SummaryWriter as TensorboardXSummaryWriter
+except Exception:
+    TensorboardXSummaryWriter = None
 
 def get_parameters(modules: Iterable[Module]):
     """
@@ -43,14 +48,19 @@ class FreezeParameters:
 
 class Logger:
 
-    def __init__(self, log_dir, n_logged_samples=10):
+    def __init__(self, log_dir, n_logged_samples=10, use_tensorboard=False):
         self._log_dir = log_dir
         print('\n[!] Logging to:', log_dir)
         self._n_logged_samples = n_logged_samples
         self._summ_writer = SummaryWriter(log_dir, flush_secs=1, max_queue=1)
+        self._tb_writer = None
+        if use_tensorboard and TensorboardXSummaryWriter is not None:
+            self._tb_writer = TensorboardXSummaryWriter(log_dir)
 
     def log_scalar(self, scalar, name, step_):
         self._summ_writer.add_scalar('{}'.format(name), scalar, step_)
+        if self._tb_writer is not None:
+            self._tb_writer.add_scalar('{}'.format(name), scalar, step_)
 
     def log_scalars(self, scalar_dict, step):
         for key, value in scalar_dict.items():
@@ -77,6 +87,30 @@ class Logger:
             filename = os.path.join(self._log_dir, new_video_title)
             clip.write_gif(filename, fps =fps)
 
+        if self._tb_writer is not None:
+            try:
+                vid = videos[:max_videos_to_save]
+                vid = np.asarray(vid)
+                if vid.ndim == 5:
+                    vid_t = torch.from_numpy(vid).permute(0, 1, 4, 2, 3)
+                    if vid_t.dtype != torch.uint8:
+                        if vid_t.max() <= 1.0:
+                            vid_t = (vid_t * 255.0).clamp(0, 255).to(torch.uint8)
+                        else:
+                            vid_t = vid_t.clamp(0, 255).to(torch.uint8)
+                    self._tb_writer.add_video(video_title, vid_t, step, fps=fps)
+            except Exception:
+                pass
+
+    def log_video(self, videos, step, max_videos_to_save=1, fps=20, video_title='video'):
+        return self.log_videos(
+            videos,
+            step,
+            max_videos_to_save=max_videos_to_save,
+            fps=fps,
+            video_title=video_title,
+        )
+
 
     def dump_scalars_to_pickle(self, metrics, step, log_title=None):
         log_path = os.path.join(self._log_dir, "scalar_data.pkl" if log_title is None else log_title)
@@ -85,6 +119,19 @@ class Logger:
 
     def flush(self):
         self._summ_writer.flush()
+        if self._tb_writer is not None:
+            self._tb_writer.flush()
+
+    def close(self):
+        try:
+            self._summ_writer.close()
+        except Exception:
+            pass
+        if self._tb_writer is not None:
+            try:
+                self._tb_writer.close()
+            except Exception:
+                pass
 
 def compute_return(rewards, values, discounts, td_lam, last_value):
     if rewards.numel() == 0:
