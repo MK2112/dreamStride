@@ -8,6 +8,7 @@ import numpy as np
 class SpotControl:
     def __init__(self, size=(64, 256)):
         self.size = size
+        self.obs_size = (size[0], size[0])
 
         with open(
             os.path.join(os.path.dirname(os.path.realpath(__file__)), "config.json"),
@@ -56,11 +57,23 @@ class SpotControl:
             received_data += chunk
         return received_data
 
+    def _to_observation_image(self, image):
+        # Convert the controller's HWC panorama to the CHW image the models expect
+        image = np.array(image, dtype=np.uint8)
+        out_h, out_w = self.obs_size
+        in_h, in_w = image.shape[:2]
+        rows = np.linspace(0, in_h - 1, out_h).astype(int)[:, None]
+        cols = np.linspace(0, in_w - 1, out_w).astype(int)[None, :]
+        image = image[rows, cols]
+        return np.ascontiguousarray(image.transpose(2, 0, 1))
+
     @property
     def observation_space(self):
         return gym.spaces.Dict(
             {
-                "image": gym.spaces.Box(0, 255, self.size + (3,), dtype=np.uint8),
+                "image": gym.spaces.Box(
+                    0, 255, (3,) + self.obs_size, dtype=np.uint8
+                ),
                 "reset": gym.spaces.Box(0, 1, (1,), dtype=np.uint8),
                 "reward": gym.spaces.Box(-np.inf, np.inf, (1,), dtype=np.float32),
             }
@@ -102,7 +115,7 @@ class SpotControl:
             {
                 "position": [0, 0, 0],
                 "velocity": [0, 0],
-                "image": np.array(obs["image"], dtype=np.uint8),
+                "image": self._to_observation_image(obs["image"]),
             },
             obs["reward"],
             done,
@@ -135,7 +148,7 @@ class SpotControl:
         return {
             "position": [0, 0, 0],
             "velocity": [0, 0],
-            "image": np.array(obs["image"], dtype=np.uint8),
+            "image": self._to_observation_image(obs["image"]),
         }
 
     def render(self, *args, **kwargs):
