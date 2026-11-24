@@ -190,10 +190,15 @@ class ConvEncoder(nn.Module):
             layers.append(self.act_fn)
 
         self.conv_block = nn.Sequential(*layers)
+        height, width = input_shape[1], input_shape[2]
+        for kernel_size in self.kernels:
+            height = (height - kernel_size) // 2 + 1
+            width = (width - kernel_size) // 2 + 1
+        flat_size = self.depth * (2 ** (len(self.kernels) - 1)) * height * width
         self.fc = (
             nn.Identity()
-            if self.embed_size == 1024
-            else nn.Linear(1024, self.embed_size)
+            if flat_size == self.embed_size
+            else nn.Linear(flat_size, self.embed_size)
         )
 
     def forward(self, inputs):
