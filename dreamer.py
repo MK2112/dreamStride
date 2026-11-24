@@ -425,6 +425,7 @@ class Dreamer:
                 "rssm": self.rssm.state_dict(),
                 "actor": self.actor.state_dict(),
                 "reward_model": self.reward_model.state_dict(),
+                "value_model": self.value_model.state_dict(),
                 "obs_encoder": self.obs_encoder.state_dict(),
                 "obs_decoder": self.obs_decoder.state_dict(),
                 "discount_model": self.discount_model.state_dict()
@@ -442,6 +443,8 @@ class Dreamer:
         self.rssm.load_state_dict(checkpoint["rssm"])
         self.actor.load_state_dict(checkpoint["actor"])
         self.reward_model.load_state_dict(checkpoint["reward_model"])
+        if checkpoint.get("value_model") is not None:
+            self.value_model.load_state_dict(checkpoint["value_model"])
         self.obs_encoder.load_state_dict(checkpoint["obs_encoder"])
         self.obs_decoder.load_state_dict(checkpoint["obs_decoder"])
 
