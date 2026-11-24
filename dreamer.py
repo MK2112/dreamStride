@@ -439,7 +439,9 @@ class Dreamer:
         )
 
     def restore_checkpoint(self, ckpt_path):
-        checkpoint = torch.load(ckpt_path)
+        if not ckpt_path:
+            raise ValueError("--restore requires --checkpoint-path")
+        checkpoint = torch.load(ckpt_path, map_location=self.device)
         self.rssm.load_state_dict(checkpoint["rssm"])
         self.actor.load_state_dict(checkpoint["actor"])
         self.reward_model.load_state_dict(checkpoint["reward_model"])
