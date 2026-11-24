@@ -186,7 +186,7 @@ class OneHotAction:
 
     def _sample_action(self):
         actions = self._env.action_space.n
-        index = self._random.randint(0, actions)
+        index = np.random.randint(0, actions)
         reference = np.zeros(actions, dtype=np.float32)
         reference[index] = 1.0
         return reference
@@ -201,7 +201,7 @@ class RewardObs:
 
     @property
     def observation_space(self):
-        spaces = self._env.observation_space.spaces
+        spaces = dict(self._env.observation_space.spaces)
         assert "reward" not in spaces
         spaces["reward"] = gym.spaces.Box(-np.inf, np.inf, dtype=np.float32)
         return gym.spaces.Dict(spaces)
@@ -223,7 +223,7 @@ class ResizeImage:
         self._size = size
         self._keys = [
             k
-            for k, v in env.obs_space.items()
+            for k, v in env.observation_space.spaces.items()
             if len(v.shape) > 1 and v.shape[:2] != size
         ]
         print(f"Resizing keys {','.join(self._keys)} to {self._size}.")
@@ -241,18 +241,18 @@ class ResizeImage:
             raise ValueError(name)
 
     @property
-    def obs_space(self):
-        spaces = self._env.obs_space
+    def observation_space(self):
+        spaces = dict(self._env.observation_space.spaces)
         for key in self._keys:
             shape = self._size + spaces[key].shape[2:]
             spaces[key] = gym.spaces.Box(0, 255, shape, np.uint8)
-        return spaces
+        return gym.spaces.Dict(spaces)
 
     def step(self, action):
-        obs = self._env.step(action)
+        obs, reward, done, info = self._env.step(action)
         for key in self._keys:
             obs[key] = self._resize(obs[key])
-        return obs
+        return obs, reward, done, info
 
     def reset(self):
         obs = self._env.reset()
@@ -282,15 +282,15 @@ class RenderImage:
             raise ValueError(name)
 
     @property
-    def obs_space(self):
-        spaces = self._env.obs_space
+    def observation_space(self):
+        spaces = dict(self._env.observation_space.spaces)
         spaces[self._key] = gym.spaces.Box(0, 255, self._shape, np.uint8)
-        return spaces
+        return gym.spaces.Dict(spaces)
 
     def step(self, action):
-        obs = self._env.step(action)
+        obs, reward, done, info = self._env.step(action)
         obs[self._key] = self._env.render("rgb_array")
-        return obs
+        return obs, reward, done, info
 
     def reset(self):
         obs = self._env.reset()
