@@ -99,7 +99,9 @@ class SpotControl:
         self._socket_out.sendall(action_data)
 
         ## Reactio: Receive observation from WeBots
-        data_length = int.from_bytes(self.conn.recv(self.RECV_SIZE), byteorder="big")
+        data_length = int.from_bytes(
+            self.receive_all(self.conn, self.RECV_SIZE), byteorder="big"
+        )
         obs_data = self.receive_all(self.conn, data_length)
         obs = json.loads(obs_data.decode())
 
@@ -140,7 +142,9 @@ class SpotControl:
         self._socket_out.sendall(action_data)
 
         ## Reactio: Receive observation from WeBots
-        data_length = int.from_bytes(self.conn.recv(self.RECV_SIZE), byteorder="big")
+        data_length = int.from_bytes(
+            self.receive_all(self.conn, self.RECV_SIZE), byteorder="big"
+        )
         obs_data = self.receive_all(self.conn, data_length)
         obs = json.loads(obs_data.decode())
 

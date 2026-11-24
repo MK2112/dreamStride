@@ -157,6 +157,18 @@ if __name__ == "__main__":
             (resized_r_h_img, resized_l_h_img), axis=1
         ).tolist()  # 64x256x3; NumPy array would cause havoc in JSON serialization
 
+    def receive_all(conn: socket.socket, length: int) -> bytes:
+        # Read exactly length bytes; recv() may return fewer than requested
+        received = b""
+        while len(received) < length:
+            chunk = conn.recv(min(BUFFER_SIZE, length - len(received)))
+            if not chunk:
+                raise RuntimeError(
+                    "Received data incomplete. Socket connection broken."
+                )
+            received += chunk
+        return received
+
     def shutdown() -> None:
         socket_in.close()
         socket_out.close()
@@ -190,13 +202,13 @@ if __name__ == "__main__":
             ## Actio
             ########
             try:
-                full_data = conn.recv(
-                    int.from_bytes(conn.recv(RECV_SIZE), byteorder="big")
+                data_length = int.from_bytes(
+                    receive_all(conn, RECV_SIZE), byteorder="big"
                 )
-                action_data = full_data.decode()
+                action_data = receive_all(conn, data_length).decode()
                 action = json.loads(action_data)
                 # Process the received JSON object here
-            except (ConnectionError, json.JSONDecodeError) as e:
+            except (ConnectionError, RuntimeError, json.JSONDecodeError) as e:
                 print(f"[!] Downlink Error: [{time.time()}] {e}")
                 shutdown()
                 break

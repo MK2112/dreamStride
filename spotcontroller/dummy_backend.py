@@ -67,7 +67,7 @@ def dummy_server():
 
         ## Reactio: Receive observation from controller
 
-        data_length = int.from_bytes(conn.recv(RECV_SIZE), byteorder="big")
+        data_length = int.from_bytes(receive_all(conn, RECV_SIZE), byteorder="big")
         obs_data = receive_all(conn, data_length)
         obs = json.loads(obs_data.decode())
 
