@@ -99,8 +99,8 @@ class Logger:
                         else:
                             vid_t = vid_t.clamp(0, 255).to(torch.uint8)
                     self._tb_writer.add_video(video_title, vid_t, step, fps=fps)
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"[!] Failed to log TensorBoard video: {e}")
 
     def log_video(self, videos, step, max_videos_to_save=1, fps=20, video_title='video'):
         return self.log_videos(
