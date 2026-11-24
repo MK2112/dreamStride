@@ -74,7 +74,9 @@ class TimeLimit:
         obs, reward, done, info = self._env.step(action)
         self._step += 1
         if self._step >= self._duration:
-            done = True
+            if not done:
+                info["TimeLimit.truncated"] = True
+                done = True
             if "discount" not in info:
                 info["discount"] = np.array(1.0).astype(np.float32)
             self._step = None

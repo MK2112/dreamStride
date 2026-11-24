@@ -331,26 +331,28 @@ class Dreamer:
                     obs, prev_state, prev_action, explore=True
                 )
             action = action[0].cpu().numpy()
-            next_obs, rew, done, _ = env.step(action)
-            self.data_buffer.add(obs, action, rew, done)
+            next_obs, rew, done, info = env.step(action)
+            truncated = info.get("TimeLimit.truncated", False)
+            self.data_buffer.add(obs, action, rew, done and not truncated)
 
             episode_rewards[-1] += rew
 
+            prev_state = posterior
+            prev_action = (
+                torch.tensor(action, dtype=torch.float32)
+                .to(self.device)
+                .unsqueeze(0)
+            )
             if done:
                 obs = env.reset()
                 done = False
-                prev_state = self.rssm.init_state(1, self.device)
-                prev_action = torch.zeros(1, self.action_size).to(self.device)
+                if not truncated:
+                    prev_state = self.rssm.init_state(1, self.device)
+                    prev_action = torch.zeros(1, self.action_size).to(self.device)
                 if i != collect_steps - 1:
                     episode_rewards.append(0.0)
             else:
                 obs = next_obs
-                prev_state = posterior
-                prev_action = (
-                    torch.tensor(action, dtype=torch.float32)
-                    .to(self.device)
-                    .unsqueeze(0)
-                )
         return np.array(episode_rewards)
 
     def evaluate(self, env, eval_episodes, render=False):
@@ -391,9 +393,10 @@ class Dreamer:
 
         for i in range(seed_steps):
             action = env.action_space.sample()
-            next_obs, rew, done, _ = env.step(action)
-
-            self.data_buffer.add(obs, action, rew, done)
+            next_obs, rew, done, info = env.step(action)
+            self.data_buffer.add(
+                obs, action, rew, done and not info.get("TimeLimit.truncated", False)
+            )
             seed_episode_rews[-1] += rew
             if done:
                 obs = env.reset()

@@ -108,10 +108,14 @@ class SpotControl:
         # obs: Dict ['position': (3,), 'velocity': (2,), 'image': (3, 64, 64)], reward:0.9556776085533385, done:False, info:{'discount': array(1., dtype=float32)}
         # image: (3, 64, 64) [0, 255]
 
-        done = obs["done"] or (self.iters_counter >= self.world_iters)
+        truncated = not obs["done"] and self.iters_counter >= self.world_iters
+        done = obs["done"] or truncated
         self.iters_counter = (
             self.iters_counter + 1 if self.iters_counter < self.world_iters else 0
         )
+        info = {"discount": np.array(1.0, np.float32)}
+        if truncated:
+            info["TimeLimit.truncated"] = True
 
         return (
             {
@@ -121,7 +125,7 @@ class SpotControl:
             },
             obs["reward"],
             done,
-            {"discount": np.array(1.0, np.float32)},
+            info,
         )
 
     def reset(self):
