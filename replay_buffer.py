@@ -42,6 +42,11 @@ class ReplayBuffer:
         self.episodes = self.episodes + (1 if done else 0)
 
     def _sample_idx(self, L):
+        if L < 1 or L >= self.size or (not self.full and self.idx <= L):
+            raise ValueError(
+                f"cannot sample a sequence of length {L} from a buffer with "
+                f"{self.steps} steps and size {self.size}"
+            )
         valid_idx = False
         while not valid_idx:
             idx = np.random.randint(0, self.size if self.full else self.idx - L)
