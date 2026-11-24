@@ -128,13 +128,19 @@ class Dreamer:
             )
 
         self.world_model_opt = optim.Adam(
-            self.world_model_params, self.args.model_learning_rate
+            self.world_model_params,
+            self.args.model_learning_rate,
+            eps=self.args.adam_epsilon,
         )
         self.value_opt = optim.Adam(
-            self.value_model.parameters(), self.args.value_learning_rate
+            self.value_model.parameters(),
+            self.args.value_learning_rate,
+            eps=self.args.adam_epsilon,
         )
         self.actor_opt = optim.Adam(
-            self.actor.parameters(), self.args.actor_learning_rate
+            self.actor.parameters(),
+            self.args.actor_learning_rate,
+            eps=self.args.adam_epsilon,
         )
 
         if self.args.use_disc_model:
