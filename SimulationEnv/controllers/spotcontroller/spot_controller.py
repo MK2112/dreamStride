@@ -118,8 +118,8 @@ def get_env_state(cameras):
     r_h_img = np.array(cameras[1].getImageArray()).astype(np.uint8)
     # We need to achieve a locally sound shape to correctly resize and concatenate the images
     # I just can't with this resizing stuff, takes eternities to run and barely gets the stuff anywhere effectively
-    l_h_img = cv2.cvtColor(l_h_img, cv2.COLOR_BGR2RGB).reshape(720, 1080, 3)
-    r_h_img = cv2.cvtColor(r_h_img, cv2.COLOR_BGR2RGB).reshape(720, 1080, 3)
+    l_h_img = l_h_img.transpose(1, 0, 2)
+    r_h_img = r_h_img.transpose(1, 0, 2)
     resized_l_h_img = cv2.resize(l_h_img, (128, 64), interpolation=cv2.INTER_AREA)
     resized_r_h_img = cv2.resize(r_h_img, (128, 64), interpolation=cv2.INTER_AREA)
     # Yes, it's right, then left image - don't ask me why
