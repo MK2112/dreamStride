@@ -390,7 +390,13 @@ class Dreamer:
                 if render:
                     video_images[i].append(obs["image"].transpose(1, 2, 0).copy())
                 obs = next_obs
-        return episode_rew, np.array(video_images[: self.args.max_videos_to_save])
+        videos = video_images[: self.args.max_videos_to_save]
+        if videos and len(videos[0]) > 0:
+            max_len = max(len(frames) for frames in videos)
+            videos = [
+                frames + [frames[-1]] * (max_len - len(frames)) for frames in videos
+            ]
+        return episode_rew, np.array(videos)
 
     def collect_random_episodes(self, env, seed_steps):
         obs = env.reset()
