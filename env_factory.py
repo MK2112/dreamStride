@@ -16,6 +16,7 @@ def make_env(args):
         env = env_wrapper.DeepMindControl(args.env, args.seed)
     elif args.env.startswith("spot"):
         env = spot_wrapper.SpotControl(size=(64, 256))
+        env.world_iters = args.max_episode_length // args.action_repeat
     else:
         raise NotImplementedError(f"Unknown env '{args.env}'.")
 

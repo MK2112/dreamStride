@@ -471,13 +471,14 @@ def main():
         action="store_true",
         help="List available environment prefixes and exit",
     )
+    parser.add_argument("--env", type=str, default=None, help="Control Suite environment")
 
     preliminary_args, _ = parser.parse_known_args()
 
     with open(preliminary_args.config, "r") as f:
         config = json.load(f)
 
-    if config["env"].startswith("walker"):
+    if (preliminary_args.env or config["env"]).startswith("walker"):
         os.environ["MUJOCO_GL"] = "egl"
 
     if preliminary_args.list_envs:
@@ -618,7 +619,10 @@ def main():
         help="Latent imagination horizon",
     )  # As per H in DreamerV2 paper
     parser.add_argument(
-        "--use-disc-model", action="store_true", help="Whether to use discount model"
+        "--use-disc-model",
+        action="store_true",
+        default=config.get("use_disc_model", False),
+        help="Whether to use discount model",
     )
 
     # Coeffecients and constants
@@ -694,7 +698,7 @@ def main():
         "--test-interval",
         type=int,
         default=config["test_interval"],
-        help="Test interval (episodes)",
+        help="Test interval (steps)",
     )
     parser.add_argument(
         "--test-episodes",
@@ -731,7 +735,7 @@ def main():
         "--checkpoint-interval",
         type=int,
         default=config["checkpoint_interval"],
-        help="Checkpoint interval (episodes)",
+        help="Checkpoint interval (steps)",
     )  # Model Checkpoint
     parser.add_argument(
         "--checkpoint-path", type=str, default="", help="Load model checkpoint"
@@ -739,12 +743,9 @@ def main():
     parser.add_argument(
         "--restore", action="store_true", help="restores model from checkpoint"
     )
-    parser.add_argument(
-        "--experience-replay", type=str, default="", help="Load experience replay"
-    )
-    parser.add_argument("--render", action="store_true", help="Render environment")
-
-    args = parser.parse_args()
+    args, _ = parser.parse_known_args()
+    if args.test:
+        args.evaluate = True
 
     data_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "data/")
 
