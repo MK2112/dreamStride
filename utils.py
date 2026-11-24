@@ -114,6 +114,16 @@ class Logger:
 
     def dump_scalars_to_pickle(self, metrics, step, log_title=None):
         log_path = os.path.join(self._log_dir, "scalar_data.pkl" if log_title is None else log_title)
+        if os.path.exists(log_path):
+            try:
+                with open(log_path, 'rb') as f:
+                    while True:
+                        pickle.load(f)
+            except EOFError:
+                pass  # Valid end of pickle stream
+            except Exception:
+                with open(log_path, 'wb'):
+                    pass  # Discard truncated/corrupt log before appending again
         with open(log_path, 'ab') as f:
             pickle.dump({'step': step, **dict(metrics)}, f)
 
