@@ -443,7 +443,9 @@ def main():
     parser.add_argument(
         "--config",
         type=str,
-        default=os.path.join(os.path.dirname(os.path.realpath(__file__)), "config.json"),
+        default=os.path.join(
+            os.path.dirname(os.path.realpath(__file__)), "config.json"
+        ),
         help="Path to JSON config file",
     )
     parser.add_argument(
@@ -805,9 +807,12 @@ def main():
                 }
             )
 
+            video_images = [[] for _ in range(args.test_episodes)]
             if global_step % args.test_interval == 0:
                 episode_rews, video_images = dreamer.evaluate(
-                    train_env, args.test_episodes
+                    train_env,
+                    args.test_episodes,
+                    render=args.log_video_freq != -1,
                 )
 
                 logs.update(
