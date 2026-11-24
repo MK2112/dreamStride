@@ -489,7 +489,7 @@ def main():
         default=config["seed"],
         help="Seed for random number generator reproductibility",
     )
-    parser.add_argument("--gpu", action="store_false", help="GPUs are used if passed")
+    parser.add_argument("--gpu", action="store_true", help="GPUs are used if passed")
 
     # Data parameters
     parser.add_argument(
