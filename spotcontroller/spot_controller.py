@@ -105,6 +105,7 @@ if __name__ == "__main__":
         The closer the robot is to the goal, the higher the reward
         :param gps: GPS sensor values [x,y,z]
         :param time_taken: Passed time in this episode
+        :param penalty: Penalty for out-of-range actions (0.0 in current setup)
         :return: Reward value for the current state
         """
         base_reward = 100.0  # Max attainble reward
@@ -116,6 +117,7 @@ if __name__ == "__main__":
             and GPS_BEACON[1] + D_THRESHOLD > gps[1] > GPS_BEACON[1] - D_THRESHOLD
         ):
             reward -= 0.85 * (abs(GPS_BEACON[0] - gps[0]) + abs(GPS_BEACON[1] - gps[1]))
+        reward -= penalty
         return reward
 
     def act_out(action: dict) -> float:

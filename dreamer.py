@@ -881,6 +881,8 @@ def main():
         logger.dump_scalars_to_pickle(logs, 0, log_title="test_scalars.pkl")
         logger.log_videos(video_images, 0, max_videos_to_save=args.max_videos_to_save)
 
+    logger.close()
+
 
 if __name__ == "__main__":
     main()
