@@ -22,5 +22,8 @@ def make_env(args):
 
     env = env_wrapper.ActionRepeat(env, args.action_repeat)
     env = env_wrapper.NormalizeActions(env)
-    env = env_wrapper.TimeLimit(env, args.time_limit / args.action_repeat)
+    duration = args.time_limit
+    if args.env.startswith("spot"):
+        duration = min(duration, args.max_episode_length)
+    env = env_wrapper.TimeLimit(env, duration / args.action_repeat)
     return env

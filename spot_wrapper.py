@@ -21,7 +21,9 @@ class SpotControl:
         self.PORT_IN = config["socket"]["port_daydreamer"]
         self.RECV_SIZE = config["socket"]["recv_size"]
         self.BUFFER_SIZE = config["socket"]["buffer_size"]
-        self.world_iters = 256  # Training event limit
+        self.world_iters = config.get("max_episode_length", 1000) // config.get(
+            "action_repeat", 2
+        )
         self.iters_counter = 0  # Training event counter
         print("[+] Integrator started.")
         print(f"[!] One episode is set to {self.world_iters} iterations.")
@@ -74,8 +76,8 @@ class SpotControl:
                 "image": gym.spaces.Box(
                     0, 255, (3,) + self.obs_size, dtype=np.uint8
                 ),
-                "reset": gym.spaces.Box(0, 1, (1,), dtype=np.uint8),
-                "reward": gym.spaces.Box(-np.inf, np.inf, (1,), dtype=np.float32),
+                "position": gym.spaces.Box(-np.inf, np.inf, (3,), dtype=np.float32),
+                "velocity": gym.spaces.Box(-np.inf, np.inf, (2,), dtype=np.float32),
             }
         )
 
